@@ -13,7 +13,7 @@ export default function RootLayout({
 }>) {
   return (
     <html className="h-full" lang="en">
-      <body className="h-full">
+      <body className="h-full bg-[var(--cream)]">
         {children}
       </body>
     </html>

@@ -25,16 +25,14 @@ function answerToEnglish(oom: number, coeff: number): string {
 
 function Question({question, answer, onAnswerChange}: QuestionProps) {
   return (
-    <>
-    <div className="flex flex-col border">
-      <div className="text-4xl">
+    <div className="bg-white rounded-lg shadow-md p-6 my-4 w-full max-w-lg">
+      <div className="text-2xl sm:text-3xl font-medium text-center mb-6">
         {question.displayText}
       </div>
-        <br></br>
-      <div className="flex flex-row">
-        <label>
-          <input 
-            className="text-4xl w-32 text-center"
+      <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-row items-center gap-2">
+          <input
+            className="text-2xl sm:text-3xl w-20 sm:w-28 text-center border border-gray-300 rounded p-1"
             onChange={e => onAnswerChange({...answer, coeff: Number(e.target.value)})}
             name="coeffInput"
             type='number'
@@ -43,25 +41,23 @@ function Question({question, answer, onAnswerChange}: QuestionProps) {
             step="0.25"
             value={answer.coeff}
           />
-        </label>
-        <div className="text-4xl"> * 10^ </div>
-        <label>
-          <input 
-            className="text-4xl w-32 text-center"
+          <span className="text-2xl sm:text-3xl">* 10^</span>
+          <input
+            className="text-2xl sm:text-3xl w-20 sm:w-28 text-center border border-gray-300 rounded p-1"
             onChange={e => onAnswerChange({...answer, exp: Number(e.target.value)})}
             name="expInput"
             type='number'
             min="0"
-            max="20"
+            max="17"
             step="1"
             value={answer.exp}
           />
-        </label>
-        <br></br>
-        <div className="text-xl"> {answerToEnglish(answer.exp, answer.coeff)} </div>
+        </div>
+        <div className="text-lg italic text-[var(--muted)] mt-2">
+          {answerToEnglish(answer.exp, answer.coeff)}
+        </div>
       </div>
     </div>
-    </>
   )
 }
 
@@ -74,49 +70,82 @@ type NavButtonProps = {
 };
 
 function NavButton({currentIndex, setCurrentIndex, selfIndex, answers}: NavButtonProps) {
-  let style = '';
   const isAnswered = answers[selfIndex] !== undefined;
   const isActive = currentIndex === selfIndex;
+
+  let style = 'bg-white text-gray-600 border-gray-200';
   if (isActive) {
-    style = 'bg-blue-500 text-white border-blue-600';
+    style = 'bg-[var(--accent)] text-white border-[var(--accent)]';
   } else if (isAnswered) {
-    style = 'bg-green-100 text-green-800 border-green-300';
-  } else {
-    style = 'bg-gray-100 text-gray-600 border-gray-300'
+    style = 'bg-[var(--muted)]/20 text-[var(--muted)] border-[var(--muted)]/30';
   }
-  return(
-    <button 
-      onClick={() => {setCurrentIndex(selfIndex)}}
-      className={`w-10 h-10 border-2 rounded ${style} hover:opacity-80 transition-opacity`}
+
+  return (
+    <button
+      onClick={() => setCurrentIndex(selfIndex)}
+      className={`w-10 h-10 border-2 rounded-lg font-medium ${style} hover:opacity-80 transition-all`}
     >
-      {selfIndex}
-    </button> 
+      {selfIndex + 1}
+    </button>
   );
 }
 
 function Result({question, userAnswer}: {question: Question, userAnswer: Answer}) {
-  const oomDiff = Math.abs(question.exp - userAnswer.exp)
-  const remark = oomDiff === 0 ? "nice!" : "yikes!";
+  const oomDiff = Math.abs(question.exp - userAnswer.exp);
+  const isCorrect = oomDiff === 0;
+  const isClose = oomDiff === 1;
+
+  let statusColor = 'text-red-500';
+  let statusText = `Off by ${oomDiff} orders of magnitude`;
+  if (isCorrect) {
+    statusColor = 'text-[var(--accent)]';
+    statusText = 'Correct order of magnitude!';
+  } else if (isClose) {
+    statusColor = 'text-yellow-600';
+    statusText = 'Off by 1 order of magnitude';
+  }
 
   return (
-    <div className="border">
-      {question.displayText}
-      <br></br>
-      You answered: {userAnswer.coeff} * 10^{userAnswer.exp}
-      Actual: {question.coeff} * 10^{question.exp}
-      You were off by {oomDiff} orders of magnitude. {remark}
+    <div className="bg-white rounded-lg shadow-sm p-4 mb-3">
+      <div className="font-medium text-lg mb-2">{question.displayText}</div>
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <span className="text-[var(--muted)]">Your answer:</span>
+          <div className="font-mono">{userAnswer.coeff} * 10^{userAnswer.exp}</div>
+        </div>
+        <div>
+          <span className="text-[var(--muted)]">Actual:</span>
+          <div className="font-mono">{question.coeff} * 10^{question.exp}</div>
+        </div>
+      </div>
+      <div className={`mt-2 font-medium ${statusColor}`}>
+        {statusText}
+      </div>
     </div>
   );
 }
 
 function Results({answers, defaultAnswer}: {answers: Record<number, Answer>, defaultAnswer: Answer}) {
+  const totalQuestions = questions.length;
+  const correctCount = questions.filter((q, i) => {
+    const answer = answers[i] ?? defaultAnswer;
+    return Math.abs(q.exp - answer.exp) === 0;
+  }).length;
+
   return (
-  <div>
-    {questions.map((q, i) => { 
-      const answer = answers[i] ?? defaultAnswer;
-      return (<Result key={q.id} question={q} userAnswer={answer}/>);
-    })}
-  </div>
+    <div className="w-full max-w-lg">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-4 text-center">
+        <div className="text-2xl font-bold mb-1">Results</div>
+        <div className="text-4xl font-bold text-[var(--accent)]">{correctCount}/{totalQuestions}</div>
+        <div className="text-[var(--muted)] text-sm">correct order of magnitude</div>
+      </div>
+      <div>
+        {questions.map((q, i) => {
+          const answer = answers[i] ?? defaultAnswer;
+          return <Result key={q.id} question={q} userAnswer={answer} />;
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -128,7 +157,7 @@ type NavProps = {
 
 function Nav({ currentIndex, setCurrentIndex, answers }: NavProps) {
   return (
-    <div className="flex flex-row justify-center">
+    <div className="flex flex-row justify-center gap-2">
       {questions.map(q => (
         <NavButton
           key={q.id}
@@ -159,25 +188,37 @@ function Controls({
   handleSubmit,
   handleReset,
 }: ControlsProps) {
+  const buttonStyle = "px-4 py-2 rounded-lg font-medium transition-all hover:opacity-80";
+  const primaryButton = `${buttonStyle} bg-[var(--accent)] text-white`;
+  const secondaryButton = `${buttonStyle} bg-white text-gray-600 border border-gray-200`;
+
   if (isSubmitted) {
     return (
-      <div className="flex flex-row justify-center">
-        <button onClick={handleReset}>reset</button>
+      <div className="flex flex-row justify-center mt-6">
+        <button onClick={handleReset} className={primaryButton}>
+          Play Again
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-row justify-center">
-      {currentIndex > 0 &&
-        <button onClick={() => setCurrentIndex(currentIndex - 1)}>prev</button>
-      }
-      {currentIndex < questions.length - 1 &&
-        <button onClick={() => setCurrentIndex(currentIndex + 1)}>next</button>
-      }
-      {submitReady &&
-        <button onClick={handleSubmit}>finish!</button>
-      }
+    <div className="flex flex-row justify-center gap-3 mt-4">
+      {currentIndex > 0 && (
+        <button onClick={() => setCurrentIndex(currentIndex - 1)} className={secondaryButton}>
+          Prev
+        </button>
+      )}
+      {currentIndex < questions.length - 1 && (
+        <button onClick={() => setCurrentIndex(currentIndex + 1)} className={primaryButton}>
+          Next
+        </button>
+      )}
+      {submitReady && (
+        <button onClick={handleSubmit} className={primaryButton}>
+          Finish
+        </button>
+      )}
     </div>
   );
 }
@@ -240,7 +281,7 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-full">
+    <div className="flex flex-col items-center justify-center min-h-full px-4 py-8">
       {isSubmitted ? (
         <Results answers={answers} defaultAnswer={defaultAnswer} />
       ) : (
