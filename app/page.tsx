@@ -26,32 +26,52 @@ function answerToEnglish(oom: number, coeff: number): string {
 function Question({question, answer, onAnswerChange}: QuestionProps) {
   return (
     <div className="bg-white rounded-lg shadow-md p-6 my-4 w-full max-w-lg">
-      <div className="text-2xl sm:text-3xl font-medium text-center mb-6">
-        {question.displayText}
+      <div className="text-center mb-6">
+        <div className="text-2xl sm:text-3xl font-medium">
+          {question.displayText}
+        </div>
+        {question.clarification && (
+          <div className="text-sm italic text-[var(--muted)] mt-1">
+            {question.clarification}
+          </div>
+        )}
+        <div className="text-sm text-[var(--muted)] mt-2">
+          Answer in: {question.unit}
+        </div>
       </div>
       <div className="flex flex-col items-center gap-2">
-        <div className="flex flex-row items-center gap-2">
-          <input
-            className="text-2xl sm:text-3xl w-20 sm:w-28 text-center border border-gray-300 rounded p-1"
-            onChange={e => onAnswerChange({...answer, coeff: Number(e.target.value)})}
-            name="coeffInput"
-            type='number'
-            min="0"
-            max="10"
-            step="0.25"
-            value={answer.coeff}
-          />
-          <span className="text-2xl sm:text-3xl">* 10^</span>
-          <input
-            className="text-2xl sm:text-3xl w-20 sm:w-28 text-center border border-gray-300 rounded p-1"
-            onChange={e => onAnswerChange({...answer, exp: Number(e.target.value)})}
-            name="expInput"
-            type='number'
-            min="0"
-            max="17"
-            step="1"
-            value={answer.exp}
-          />
+        <div className="flex flex-row items-center gap-3">
+          <div className="flex flex-col">
+            <button
+              onClick={() => onAnswerChange({...answer, coeff: Math.min(9, answer.coeff + 1)})}
+              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-t border border-gray-300 text-lg font-medium"
+            >
+              +
+            </button>
+            <button
+              onClick={() => onAnswerChange({...answer, coeff: Math.max(0, answer.coeff - 1)})}
+              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-b border border-t-0 border-gray-300 text-lg font-medium"
+            >
+              −
+            </button>
+          </div>
+          <span className="text-2xl sm:text-3xl w-8 text-center font-mono">{answer.coeff}</span>
+          <span className="text-2xl sm:text-3xl -ml-2">× 10</span>
+          <span className="text-xl sm:text-2xl font-mono -ml-1 mb-3">{answer.exp}</span>
+          <div className="flex flex-col">
+            <button
+              onClick={() => onAnswerChange({...answer, exp: Math.min(17, answer.exp + 1)})}
+              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-t border border-gray-300 text-lg font-medium"
+            >
+              +
+            </button>
+            <button
+              onClick={() => onAnswerChange({...answer, exp: Math.max(0, answer.exp - 1)})}
+              className="w-8 h-8 bg-gray-100 hover:bg-gray-200 rounded-b border border-t-0 border-gray-300 text-lg font-medium"
+            >
+              −
+            </button>
+          </div>
         </div>
         <div className="text-lg italic text-[var(--muted)] mt-2">
           {answerToEnglish(answer.exp, answer.coeff)}
@@ -111,11 +131,11 @@ function Result({question, userAnswer}: {question: Question, userAnswer: Answer}
       <div className="grid grid-cols-2 gap-4 text-sm">
         <div>
           <span className="text-[var(--muted)]">Your answer:</span>
-          <div className="font-mono">{userAnswer.coeff} * 10^{userAnswer.exp}</div>
+          <div>{answerToEnglish(userAnswer.exp, userAnswer.coeff)}</div>
         </div>
         <div>
           <span className="text-[var(--muted)]">Actual:</span>
-          <div className="font-mono">{question.coeff} * 10^{question.exp}</div>
+          <div>{answerToEnglish(question.exp, question.coeff)}</div>
         </div>
       </div>
       <div className={`mt-2 font-medium ${statusColor}`}>
