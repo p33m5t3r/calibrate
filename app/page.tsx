@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react';
-import { questions, type Answer, type Question } from './data/questions';
+import { questions, categoryLabels, type Answer, type Question, type Category } from './data/questions';
 
 type QuestionProps = {
   question: Question,
@@ -152,18 +152,32 @@ function Results({answers, defaultAnswer}: {answers: Record<number, Answer>, def
     return Math.abs(q.exp - answer.exp) === 0;
   }).length;
 
+  const questionsByCategory = questions.reduce((acc, q) => {
+    const cat = q.category as Category;
+    if (!acc[cat]) acc[cat] = [];
+    acc[cat].push(q);
+    return acc;
+  }, {} as Record<Category, Question[]>);
+
+  const categories = Object.keys(questionsByCategory) as Category[];
+
   return (
-    <div className="w-full max-w-lg">
-      <div className="bg-white rounded-lg shadow-md p-6 mb-4 text-center">
+    <div className="w-full max-w-4xl">
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6 text-center">
         <div className="text-2xl font-bold mb-1">Results</div>
         <div className="text-4xl font-bold text-[var(--accent)]">{correctCount}/{totalQuestions}</div>
         <div className="text-[var(--muted)] text-sm">correct order of magnitude</div>
       </div>
-      <div>
-        {questions.map((q, i) => {
-          const answer = answers[i] ?? defaultAnswer;
-          return <Result key={q.id} question={q} userAnswer={answer} />;
-        })}
+      <div className="flex flex-row flex-wrap gap-6">
+        {categories.map(cat => (
+          <div key={cat} className="w-full sm:w-[calc(50%-12px)]">
+            <div className="text-sm font-medium text-[var(--muted)] mb-2">{categoryLabels[cat]}</div>
+            {questionsByCategory[cat].map(q => {
+              const answer = answers[q.id] ?? defaultAnswer;
+              return <Result key={q.id} question={q} userAnswer={answer} />;
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );
