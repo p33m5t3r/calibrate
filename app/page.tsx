@@ -1,36 +1,6 @@
 'use client'
 import { useState } from 'react';
-
-type Answer = {
-  exp: number,
-  coeff: number
-}
-
-type Question = {
-  id: number,
-  displayText: string,
-} & Answer 
-
-const questions: Question[] = [
-  {
-    id: 0,
-    displayText: "world population (2025)",
-    exp: 9,
-    coeff: 8.3
-  },
-  {
-    id: 1,
-    displayText: "world GDP (in dollars, 2025)",
-    exp: 13,
-    coeff: 9.78
-  },
-  {
-    id: 2,
-    displayText: "world GDP (in dollars, 2000)",
-    exp: 13,
-    coeff: 9.78
-  },
-];
+import { questions, type Answer, type Question } from './data/questions';
 
 type QuestionProps = {
   question: Question,
@@ -40,7 +10,7 @@ type QuestionProps = {
 
 function answerToEnglish(oom: number, coeff: number): string {
   let word = ' ';
-  let n = oom % 3;
+  const n = oom % 3;
   switch (Math.floor(oom / 3)) {
     case 1: word = ' thousand'; break;
     case 2: word = ' million'; break;
@@ -52,8 +22,6 @@ function answerToEnglish(oom: number, coeff: number): string {
   const value = (10**n) * coeff;
   return `${value}${word}`
 }
-
-// ++ useEffect? for text rendering
 
 function Question({question, answer, onAnswerChange}: QuestionProps) {
   return (
@@ -98,7 +66,14 @@ function Question({question, answer, onAnswerChange}: QuestionProps) {
 }
 
 
-function NavButton({currentIndex, setCurrentIndex, selfIndex, answers}) {
+type NavButtonProps = {
+  currentIndex: number;
+  setCurrentIndex: (index: number) => void;
+  selfIndex: number;
+  answers: Record<number, Answer>;
+};
+
+function NavButton({currentIndex, setCurrentIndex, selfIndex, answers}: NavButtonProps) {
   let style = '';
   const isAnswered = answers[selfIndex] !== undefined;
   const isActive = currentIndex === selfIndex;
@@ -145,40 +120,97 @@ function Results({answers, defaultAnswer}: {answers: Record<number, Answer>, def
   );
 }
 
-function Questions({
-  answers, 
-  currentIndex, 
-  setCurrentIndex, 
-  defaultAnswer,
-  handleAnswerChange,
+type NavProps = {
+  currentIndex: number;
+  setCurrentIndex: (index: number) => void;
+  answers: Record<number, Answer>;
+};
+
+function Nav({ currentIndex, setCurrentIndex, answers }: NavProps) {
+  return (
+    <div className="flex flex-row justify-center">
+      {questions.map(q => (
+        <NavButton
+          key={q.id}
+          currentIndex={currentIndex}
+          setCurrentIndex={setCurrentIndex}
+          selfIndex={q.id}
+          answers={answers}
+        />
+      ))}
+    </div>
+  );
+}
+
+type ControlsProps = {
+  isSubmitted: boolean;
+  currentIndex: number;
+  setCurrentIndex: (index: number) => void;
+  submitReady: boolean;
+  handleSubmit: () => void;
+  handleReset: () => void;
+};
+
+function Controls({
+  isSubmitted,
+  currentIndex,
+  setCurrentIndex,
   submitReady,
   handleSubmit,
-}) {
+  handleReset,
+}: ControlsProps) {
+  if (isSubmitted) {
+    return (
+      <div className="flex flex-row justify-center">
+        <button onClick={handleReset}>reset</button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-row justify-center">
+      {currentIndex > 0 &&
+        <button onClick={() => setCurrentIndex(currentIndex - 1)}>prev</button>
+      }
+      {currentIndex < questions.length - 1 &&
+        <button onClick={() => setCurrentIndex(currentIndex + 1)}>next</button>
+      }
+      {submitReady &&
+        <button onClick={handleSubmit}>finish!</button>
+      }
+    </div>
+  );
+}
+
+type QuestionsProps = {
+  answers: Record<number, Answer>;
+  currentIndex: number;
+  setCurrentIndex: (index: number) => void;
+  defaultAnswer: Answer;
+  handleAnswerChange: (a: Answer) => void;
+};
+
+function Questions({
+  answers,
+  currentIndex,
+  setCurrentIndex,
+  defaultAnswer,
+  handleAnswerChange,
+}: QuestionsProps) {
 
   const currentQuestion = questions[currentIndex];
   const currentAnswer = answers[currentQuestion.id] || defaultAnswer;
 
-  return(
-    <div className="flex flex-row justify-center" >
-    {questions.map(q => (
-      <NavButton key={q.id} currentIndex={currentIndex} setCurrentIndex={setCurrentIndex} selfIndex={q.id} answers={answers} />)
-    )}
-      { currentIndex > 0 &&
-        <button onClick={() => {setCurrentIndex(currentIndex - 1)}}>prev</button>
-      }
-      <Question 
+  return (
+    <>
+      <Nav currentIndex={currentIndex} setCurrentIndex={setCurrentIndex} answers={answers} />
+      <Question
         question={currentQuestion}
         answer={currentAnswer}
         onAnswerChange={handleAnswerChange}
       />
-      { currentIndex < questions.length - 1 &&
-        <button onClick={() => {setCurrentIndex(currentIndex+1)}}>next</button>
-      }
-      { submitReady &&
-        <button onClick={() => {handleSubmit()}}>finish!</button>
-      }
-    </div>
-  )
+    </>
+  );
 }
 
 
@@ -201,21 +233,33 @@ export default function Home() {
 
   const handleSubmit = () => setSubmitted(true);
 
+  const handleReset = () => {
+    setCurrentIndex(0);
+    setAnswers({});
+    setSubmitted(false);
+  };
+
   return (
-    <div className="flex flex-col justify-center h-full">
-      { isSubmitted ?
-        <Results answers={answers} defaultAnswer={defaultAnswer}/>
-        :
+    <div className="flex flex-col items-center justify-center h-full">
+      {isSubmitted ? (
+        <Results answers={answers} defaultAnswer={defaultAnswer} />
+      ) : (
         <Questions
           answers={answers}
           currentIndex={currentIndex}
           setCurrentIndex={setCurrentIndex}
           defaultAnswer={defaultAnswer}
           handleAnswerChange={handleAnswerChange}
-          submitReady={submitReady}
-          handleSubmit={handleSubmit}
         />
-      } 
+      )}
+      <Controls
+        isSubmitted={isSubmitted}
+        currentIndex={currentIndex}
+        setCurrentIndex={setCurrentIndex}
+        submitReady={submitReady}
+        handleSubmit={handleSubmit}
+        handleReset={handleReset}
+      />
     </div>
   );
 }
